@@ -10,6 +10,7 @@
 
 const int listen_port = 8888;
 const char error_marker = 222;
+// urf-8
 char error_message[] = {
     226, 150, 145, 226, 150, 145, 226, 150, 145, 226, 150, 145, 226, 150, 145, 226,
     150, 132, 226, 150, 128, 226, 150, 128, 226, 150, 128, 226, 150, 132, 226, 150,
@@ -99,6 +100,7 @@ void simulate(int size, int width) {
         float passed = (float)(end - start) / CLOCKS_PER_SEC;
         if (passed > 1) {
             field[0] = error_marker;
+            break;
         }
 
         usleep(1000000 - passed * 1000000);
