@@ -5,62 +5,22 @@
 #include <string.h>
 #include <limits.h>
 #include <errno.h>
-
-struct List {
-    int count;
-    int capacity;
-    int elem_size;
-    void *arr;
-};
-
-struct List* list_create(int elem_size) {
-    struct List* list = malloc(sizeof(struct List));
-    if (!list)
-        return NULL;
-
-    list->count = 0;
-    list->capacity = 4;
-    list->elem_size = elem_size;
-    list->arr = malloc(list->capacity * elem_size);
-    if (!list->arr)
-        return NULL;
-
-    return list;
-}
-
-int list_add(struct List* list, void* elem) {
-    if (list->count == list->capacity) {
-        list->capacity *= 2;
-        list->arr = realloc(list->arr, list->capacity * list->elem_size);
-        if (!list->arr)
-            return 0;
-    }
-
-    memcpy(list->arr + list->count * list->elem_size, elem, list->elem_size);
-    list->count++;
-
-    return 1;
-}
-
-void list_free(struct List* list) {
-    free(list->arr);
-    free(list);
-}
+#include "list.h" // самописный расширяющийся масссив, который может хранить любые типы
 
 int parse_numbers(char *content, int size, struct List *list) {
     char* current = content;
     while (current < content + size) {
         char* num_end = current;
-        long long num = strtoll(current, &num_end, 10);
-        if (errno == ERANGE) {
+        long long num = strtoll(current, &num_end, 10); // пытаемся преобразовать строку в число
+        if (errno == ERANGE) { // если число слишком большое, его пропускаем
             while (current < content + size && *current >= '0' && *current <= '9')
                 current++;
             current++;
-        } else if (num_end == current) {
+        } else if (num_end == current) { // текущая позиция не является началом числа
             while (current < content + size && *current < '0' && *current > '9')
                 current++;
             current++;
-        } else {
+        } else { // прочитали число
             current = num_end;
             if (!list_add(list, &num)) {
                 printf("Failed to allocate memory. Exit.\n");
@@ -72,8 +32,11 @@ int parse_numbers(char *content, int size, struct List *list) {
     return 1;
 }
 
-int ll_compare(const void* a, const void* b) {
-    return *(long long*)a >= *(long long*)b ? 1 : -1;
+int ll_compare(const void *a, const void *b) {
+    if (*(long long *)a == *(long long *)b)
+        return 0;
+
+    return *(long long *)a > *(long long *)b ? 1 : -1;
 }
 
 int main(int argc, char** argv) {
@@ -130,8 +93,8 @@ int main(int argc, char** argv) {
     }
 
     char number[64];
-    for (int i = 0; i < list->count * list->elem_size; i += list->elem_size) {
-        int number_len = sprintf(number, "%lld ", *(long long*)(list->arr + i));
+    for (int i = 0; i < list->count; i++) {
+        int number_len = sprintf(number, "%lld ", *(long long*)list_item(list, i));
         write(fout, number, number_len);
     }
     write(fout, "\n", 1);
